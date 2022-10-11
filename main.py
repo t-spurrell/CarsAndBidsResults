@@ -116,20 +116,28 @@ def get_link_in_db():
     return cursor.fetchall()
 
 
-db_links = [link[0] for link in get_link_in_db()]
+def main():
+    db_links = [link[0] for link in get_link_in_db()]
 
-auctions_on_page = []
-for x in range(100, 112):
-    print(f'checking page: {x}')
-    auction_links = get_completed_auction_links(x)
-    for links in auction_links:
-        for link in links:
-            if link not in db_links:
-                auctions_on_page.append(parse_auctions(link))
-    if auctions_on_page:
-        write_to_db(auctions_on_page)
-        auctions_on_page.clear()
-        print('wrote auctions to database. moving on to next page...')
+    auctions_on_page = []
+    for x in range(26, 27):
+        print(f'checking page: {x}')
+        auction_links = get_completed_auction_links(x)
+        for links in auction_links:
+            for link in links:
+                if link not in db_links:
+                    auctions_on_page.append(parse_auctions(link))
+        if auctions_on_page:
+            write_to_db(auctions_on_page)
+            auctions_on_page.clear()
+            print('wrote auctions to database. moving on to next page...')
+
+
+if __name__ == '__main__':
+    main()
+
+
+
 
 
 
