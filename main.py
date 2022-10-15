@@ -5,6 +5,7 @@ from configuration import load_config
 
 CONFIG = load_config()
 
+#make connection to DB
 try:
     conn = psycopg.connect(host='localhost', dbname=CONFIG['db']['name'], user=CONFIG['db']['user'],
                            password=CONFIG['db']['password'])
@@ -117,18 +118,23 @@ def get_link_in_db():
 
 
 def main():
+    #pull list of auction links already in the DB
     db_links = [link[0] for link in get_link_in_db()]
 
     auctions_on_page = []
-    for x in range(26, 27):
+    for x in range(1, 2):
         print(f'checking page: {x}')
+        #scrape links from page
         auction_links = get_completed_auction_links(x)
         for links in auction_links:
+            #link is in a tuple. loop to get link
             for link in links:
+                #checking that link is not already in DB
                 if link not in db_links:
                     auctions_on_page.append(parse_auctions(link))
         if auctions_on_page:
             write_to_db(auctions_on_page)
+            #clear list of auctions after writting to DB to prepare for next page
             auctions_on_page.clear()
             print('wrote auctions to database. moving on to next page...')
 
