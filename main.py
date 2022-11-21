@@ -1,7 +1,14 @@
 import psycopg
+import logging
 from requests_html import HTMLSession
 from configuration import load_config
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s %(name)8s %(levelname)s %(message)s')
+handler = logging.FileHandler('LOGS.log')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 CONFIG = load_config()
 
