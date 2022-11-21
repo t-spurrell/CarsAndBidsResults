@@ -76,15 +76,15 @@ def parse_auctions(url):
                 province = state
                 state = zip_code
                 zip_code = None
-        except IndexError as e:
-            print(f'Prob located in Canada. Error: {e}')
+        except IndexError:
+            print(f'Located in Canada.')
             try:
                 x = location.split(',')
                 state = x[2]
                 city = x[0]
                 province = x[1]
                 zip_code = None
-            except IndexError as e:
+            except IndexError:
                 state = location.split(',')[1].split()[0]
                 if state.lower() == 'canada':
                     print('Canada, but location is only with one ","')
@@ -122,7 +122,7 @@ def main():
     db_links = [link[0] for link in get_link_in_db()]
 
     auctions_on_page = []
-    for x in range(1, 2):
+    for x in range(1, 4):
         print(f'checking page: {x}')
         #scrape links from page
         auction_links = get_completed_auction_links(x)
