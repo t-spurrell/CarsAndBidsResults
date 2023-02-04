@@ -3,12 +3,18 @@ import logging
 from requests_html import HTMLSession
 from configuration import load_config
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s %(name)8s %(levelname)s %(message)s')
-handler = logging.FileHandler('LOGS.log')
-handler.setFormatter(formatter)
-logger.addHandler(handler)
+# logger = logging.getLogger(__name__)
+# logger.setLevel(logging.DEBUG)
+# formatter = logging.Formatter('%(asctime)s %(name)8s %(levelname)s %(message)s')
+# handler = logging.FileHandler('LOGS.log')
+# handler.setFormatter(formatter)
+# handler.setLevel(logging.DEBUG)
+# logger.addHandler(handler)
+
+## use the following logger aka leave above commented
+# logging.basicConfig(filename='LOGS.log',level= logging.INFO,
+#                     format='%(asctime)s %(name)8s %(levelname)s %(message)s',
+#                     datefmt='%m/%d/%Y %I:%M:%S %p')
 
 CONFIG = load_config()
 
@@ -39,6 +45,7 @@ def parse_auctions(url):
         link = url
         title = response.html.find('div.auction-title > h1', first=True).text
         print(title)
+        image = response.html.find('#gallery-preview-ref > div.preload-wrap.main.loaded > img', first=True).attrs['src']
         year = title.split()[0]
         make = response.html.find('div.quick-facts > dl:nth-child(1) > dd:nth-child(2) > a', first=True).text
         model = response.html.find('div.quick-facts > dl:nth-child(1) > dd.subscribeable > a', first=True).text
@@ -106,7 +113,7 @@ def parse_auctions(url):
                     province = None
 
         details = (link, title, bids, comments, auction_ended, sold_or_bid_to, price, seller, seller_type, year, make,
-                   model,transmission, drivetrain, body_style, mileage, state, city, zip_code, province)
+                   model, transmission, drivetrain, body_style, mileage, state, city, zip_code, province, image)
         return details
 
 
@@ -114,8 +121,8 @@ def write_to_db(auction_data):
     print(f'writing to DB: {auction_data}')
     for data in auction_data:
         cursor.execute('''INSERT INTO auctions (link,title,bids,comments,date_ended,sold_or_bid,price,
-        seller_name, seller_type,year,make,model,trans_type,drivetrain,body_style,mileage,state,city,zip,province)
-        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)''', data)
+        seller_name, seller_type,year,make,model,trans_type,drivetrain,body_style,mileage,state,city,zip,province,image)
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)''', data)
     conn.commit()
 
 
@@ -129,7 +136,7 @@ def main():
     db_links = [link[0] for link in get_link_in_db()]
 
     auctions_on_page = []
-    for x in range(1, 4):
+    for x in range(1, 15):
         print(f'checking page: {x}')
         #scrape links from page
         auction_links = get_completed_auction_links(x)
@@ -146,8 +153,12 @@ def main():
             print('wrote auctions to database. moving on to next page...')
 
 
+
 if __name__ == '__main__':
     main()
+
+
+
 
 
 
