@@ -42,9 +42,10 @@ def parse_auctions(url):
     with HTMLSession() as session:
         response = session.get(url)
         response.html.render(sleep=2, keep_page=True,scrolldown=1, timeout=10000)
-        link = url
+        link = link_cleaner(url)
         title = response.html.find('div.auction-title > h1', first=True).text
         print(title)
+        print(link)
         image = response.html.find('#gallery-preview-ref > div.preload-wrap.main.loaded > img', first=True).attrs['src']
         year = title.split()[0]
         make = response.html.find('div.quick-facts > dl:nth-child(1) > dd:nth-child(2) > a', first=True).text
@@ -131,26 +132,31 @@ def get_link_in_db():
     return cursor.fetchall()
 
 
+def link_cleaner(raw_link):
+    l = raw_link.split('/')
+    l.pop()
+    return '/'.join(l)
+
+
 def main():
     #pull list of auction links already in the DB
     db_links = [link[0] for link in get_link_in_db()]
 
     auctions_on_page = []
-    for x in range(1, 15):
-        print(f'checking page: {x}')
-        #scrape links from page
-        auction_links = get_completed_auction_links(x)
-        for links in auction_links:
-            #link is in a tuple. loop to get link
-            for link in links:
-                #checking that link is not already in DB
-                if link not in db_links:
-                    auctions_on_page.append(parse_auctions(link))
-        if auctions_on_page:
-            write_to_db(auctions_on_page)
-            #clear list of auctions after writting to DB to prepare for next page
-            auctions_on_page.clear()
-            print('wrote auctions to database. moving on to next page...')
+
+    #scrape links from page
+    auction_links = get_completed_auction_links(1)
+    for links in auction_links:
+        #link is in a tuple. loop to get link
+        for link in links:
+            #checking that link is not already in DB
+            if link not in db_links:
+                auctions_on_page.append(parse_auctions(link))
+    if auctions_on_page:
+        write_to_db(auctions_on_page)
+        #clear list of auctions after writting to DB to prepare for next page
+        auctions_on_page.clear()
+        #print('wrote auctions to database. moving on to next page...')
 
 
 
