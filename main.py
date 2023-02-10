@@ -43,7 +43,7 @@ def parse_auctions(url):
         response = session.get(url)
         response.html.render(sleep=2, keep_page=True,scrolldown=1, timeout=10000)
         link = link_cleaner(url)
-        title = response.html.find('div.auction-title > h1', first=True).text
+        title = response.html.find('div.row:nth-child(1) > div:nth-child(1) > div:nth-child(1) > h1:nth-child(1)', first=True).text
         print(title)
         print(link)
         image = response.html.find('#gallery-preview-ref > div.preload-wrap.main.loaded > img', first=True).attrs['src']
@@ -141,6 +141,7 @@ def link_cleaner(raw_link):
 def main():
     #pull list of auction links already in the DB
     db_links = [link[0] for link in get_link_in_db()]
+    print(len(db_links))
 
     auctions_on_page = []
 
@@ -150,14 +151,13 @@ def main():
         #link is in a tuple. loop to get link
         for link in links:
             #checking that link is not already in DB
-            if link not in db_links:
+            if link_cleaner(link) not in db_links:
                 auctions_on_page.append(parse_auctions(link))
     if auctions_on_page:
         write_to_db(auctions_on_page)
         #clear list of auctions after writting to DB to prepare for next page
         auctions_on_page.clear()
         #print('wrote auctions to database. moving on to next page...')
-
 
 
 if __name__ == '__main__':
