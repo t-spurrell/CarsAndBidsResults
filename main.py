@@ -65,7 +65,7 @@ def parse_auctions(url):
             year = None
         if not mileage.isdigit():
             mileage = None
-        if 'Auction Cancelled' in sale_details:
+        if 'Auction Cancelled' in sale_details or 'Auction Canceled' in sale_details:
             bids = None
             comments = None
             price = None
@@ -147,6 +147,7 @@ def main():
 
     #scrape links from page
     auction_links = get_completed_auction_links(1)
+
     for links in auction_links:
         #link is in a tuple. loop to get link
         for link in links:
