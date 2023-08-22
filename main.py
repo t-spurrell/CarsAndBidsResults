@@ -39,83 +39,87 @@ def get_completed_auction_links(page):
 
 
 def parse_auctions(url):
-    with HTMLSession() as session:
-        response = session.get(url)
-        response.html.render(sleep=2, keep_page=True,scrolldown=1, timeout=10000)
-        link = link_cleaner(url)
-        title = response.html.find('div.row:nth-child(1) > div:nth-child(1) > div:nth-child(1) > h1:nth-child(1)', first=True).text
-        print(title)
-        print(link)
-        image = response.html.find('#gallery-preview-ref > div.preload-wrap.main.loaded > img', first=True).attrs['src']
-        year = title.split()[0]
-        make = response.html.find('div.quick-facts > dl:nth-child(1) > dd:nth-child(2) > a', first=True).text
-        model = response.html.find('div.quick-facts > dl:nth-child(1) > dd.subscribeable > a', first=True).text
-        mileage = response.html.find('div.quick-facts > dl:nth-child(1) > dd:nth-child(6)', first=True).text.replace(',','')
-        body_style = response.html.find('div.quick-facts > dl:nth-child(2) > dd:nth-child(8)', first=True).text
-        transmission = response.html.find('div.quick-facts > dl:nth-child(2) > dd:nth-child(6)', first=True).text
-        drivetrain = response.html.find('div.quick-facts > dl:nth-child(2) > dd:nth-child(4)', first=True).text
-        location = response.html.find('div.quick-facts > dl:nth-child(1) > dd:nth-child(12) > a', first=True).text
-        seller = response.html.find('div.quick-facts > dl:nth-child(1) > dd.seller > div > div.text > a', first=True).text
-        seller_type = response.html.find('div.quick-facts > dl:nth-child(2) > dd:nth-child(14)', first=True).text
-        auction_ended = response.html.find('div.row.auction-bidbar > div.col.width-constraint > div > div > ul >'
-                                           ' li.time > span > span', first=True).text
-        sale_details = response.html.find('div.row.auction-bidbar > div.col.width-constraint > div > div > ul >'
-                                          ' li.ended > span.value', first=True).text
-        if not year.isdigit():
-            year = None
-        if not mileage.isdigit():
-            mileage = None
-        if 'Auction Cancelled' in sale_details or 'Auction Canceled' in sale_details:
-            bids = None
-            comments = None
-            price = None
-            sold_or_bid_to = 'cancelled'
-        else:
-            if 'bid' in sale_details.lower() or 'sold after' in sale_details.lower():
-                sold_or_bid_to = 'bid to'
-            elif 'sold' in sale_details.lower():
-                sold_or_bid_to = 'sold'
+    try:
+        with HTMLSession() as session:
+            response = session.get(url)
+            response.html.render(sleep=2, keep_page=True,scrolldown=1, timeout=10000)
+            link = link_cleaner(url)
+            title = response.html.find('div.row:nth-child(1) > div:nth-child(1) > div:nth-child(1) > h1:nth-child(1)', first=True).text
+            print(title)
+            print(link)
+            image = response.html.find('#gallery-preview-ref > div.preload-wrap.main.loaded > img', first=True).attrs['src']
+            year = title.split()[0]
+            make = response.html.find('div.quick-facts > dl:nth-child(1) > dd:nth-child(2) > a', first=True).text
+            model = response.html.find('div.quick-facts > dl:nth-child(1) > dd.subscribeable > a', first=True).text
+            mileage = response.html.find('div.quick-facts > dl:nth-child(1) > dd:nth-child(6)', first=True).text.replace(',','')
+            body_style = response.html.find('div.quick-facts > dl:nth-child(2) > dd:nth-child(8)', first=True).text
+            transmission = response.html.find('div.quick-facts > dl:nth-child(2) > dd:nth-child(6)', first=True).text
+            drivetrain = response.html.find('div.quick-facts > dl:nth-child(2) > dd:nth-child(4)', first=True).text
+            location = response.html.find('div.quick-facts > dl:nth-child(1) > dd:nth-child(12) > a', first=True).text
+            seller = response.html.find('dd.seller > div:nth-child(1) > div:nth-child(2) > span:nth-child(1)', first=True).text
+            seller_type = response.html.find('div.quick-facts > dl:nth-child(2) > dd:nth-child(14)', first=True).text
+            auction_ended = response.html.find('div.row.auction-bidbar > div.col.width-constraint > div > div > ul >'
+                                               ' li.time > span > span', first=True).text
+            sale_details = response.html.find('div.row.auction-bidbar > div.col.width-constraint > div > div > ul >'
+                                              ' li.ended > span.value', first=True).text
+            if not year.isdigit():
+                year = None
+            if not mileage.isdigit():
+                mileage = None
+            if 'Auction Cancelled' in sale_details or 'Auction Canceled' in sale_details:
+                bids = None
+                comments = None
+                price = None
+                sold_or_bid_to = 'cancelled'
+                print('auction canceled')
             else:
-                sold_or_bid_to = None
-            bids = response.html.find('div.row.auction-bidbar > div.col.width-constraint > div > div > ul >'
-                                      ' li.num-bids > span.value', first=True).text
-            comments = response.html.find('div.row.auction-bidbar > div.col.width-constraint > div > div > ul >'
-                                          ' li.num-comments > span.value', first=True).text
-            price = sale_details.split()[2].replace('$', '').replace(',', '')
-        try:
-            state = location.split(',')[1].split()[0]
-            city = location.split(',')[0]
-            zip_code = location.split(',')[1].split()[1].replace('(', '').replace(')', '')
-            province = None
-            if not zip_code.isdigit():
-                province = state
-                state = zip_code
-                zip_code = None
-        except IndexError:
-            print(f'Located in Canada.')
-            try:
-                x = location.split(',')
-                state = x[2]
-                city = x[0]
-                province = x[1]
-                zip_code = None
-            except IndexError:
-                state = location.split(',')[1].split()[0]
-                if state.lower() == 'canada':
-                    print('Canada, but location is only with one ","')
-                    length = len(location.split(',')[0].split())
-                    city = ' '.join(location.split(',')[0].split()[:length - 1])
-                    zip_code = None
-                    province = location.split(',')[0].split()[-1]
+                if 'bid' in sale_details.lower() or 'sold after' in sale_details.lower():
+                    sold_or_bid_to = 'bid to'
+                elif 'sold' in sale_details.lower():
+                    sold_or_bid_to = 'sold'
                 else:
-                    print('US, no zip code provided')
-                    city = location.split(',')[0]
+                    sold_or_bid_to = None
+                bids = response.html.find('div.row.auction-bidbar > div.col.width-constraint > div > div > ul >'
+                                          ' li.num-bids > span.value', first=True).text
+                comments = response.html.find('div.row.auction-bidbar > div.col.width-constraint > div > div > ul >'
+                                              ' li.num-comments > span.value', first=True).text
+                price = sale_details.split()[2].replace('$', '').replace(',', '')
+            try:
+                state = location.split(',')[1].split()[0]
+                city = location.split(',')[0]
+                zip_code = location.split(',')[1].split()[1].replace('(', '').replace(')', '')
+                province = None
+                if not zip_code.isdigit():
+                    province = state
+                    state = zip_code
                     zip_code = None
-                    province = None
+            except IndexError:
+                print(f'Located in Canada.')
+                try:
+                    x = location.split(',')
+                    state = x[2]
+                    city = x[0]
+                    province = x[1]
+                    zip_code = None
+                except IndexError:
+                    state = location.split(',')[1].split()[0]
+                    if state.lower() == 'canada':
+                        print('Canada, but location is only with one ","')
+                        length = len(location.split(',')[0].split())
+                        city = ' '.join(location.split(',')[0].split()[:length - 1])
+                        zip_code = None
+                        province = location.split(',')[0].split()[-1]
+                    else:
+                        print('US, no zip code provided')
+                        city = location.split(',')[0]
+                        zip_code = None
+                        province = None
 
-        details = (link, title, bids, comments, auction_ended, sold_or_bid_to, price, seller, seller_type, year, make,
-                   model, transmission, drivetrain, body_style, mileage, state, city, zip_code, province, image)
-        return details
+            details = (link, title, bids, comments, auction_ended, sold_or_bid_to, price, seller, seller_type, year, make,
+                       model, transmission, drivetrain, body_style, mileage, state, city, zip_code, province, image)
+            return details
+    except Exception as e:
+        print(f'Error parsing information: {e}')
 
 
 def write_to_db(auction_data):
@@ -146,7 +150,7 @@ def main():
     auctions_on_page = []
 
     #scrape links from page
-    auction_links = get_completed_auction_links(1)
+    auction_links = get_completed_auction_links(page=1)
 
     for links in auction_links:
         #link is in a tuple. loop to get link
